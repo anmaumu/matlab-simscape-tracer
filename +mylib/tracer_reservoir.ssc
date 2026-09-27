@@ -1,0 +1,23 @@
+component tracer_reservoir
+% Tracer Reservoir
+% Infinite reservoir with fixed pressure and concentration.
+  nodes
+    A = mylib.tracer_liquid; % A:right
+  end
+  parameters
+    p0 = {0.1, 'MPa'}; % Reservoir pressure
+    c0 = {0,   '1'};   % Reservoir concentration
+  end
+  variables
+    mdot   = {0, 'kg/s'}; % Mass flow into reservoir
+    mdot_c = {0, 'kg/s'}; % Tracer mass flow into reservoir
+  end
+  branches
+    mdot   : A.mdot   -> *;
+    mdot_c : A.mdot_c -> *;
+  end
+  equations
+    A.p == p0;
+    A.c == c0;
+  end
+end

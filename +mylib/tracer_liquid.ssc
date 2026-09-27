@@ -1,0 +1,21 @@
+domain tracer_liquid
+% Tracer Liquid
+% Across: pressure p, tracer mass fraction c
+% Through: total mass flow mdot, tracer mass flow mdot_c
+% Fluid properties are domain parameters, set by the Tracer Fluid Properties block.
+  variables
+    p = {0.1, 'MPa'};
+    c = {0,   '1'};
+  end
+  variables(Balancing = true)
+    mdot   = {0, 'kg/s'};
+    mdot_c = {0, 'kg/s'};
+  end
+  parameters
+    rho0  = {850,      'kg/m^3'};  % Density at reference pressure
+    p_ref = {0.101325, 'MPa'};     % Reference pressure
+    beta  = {1.5e3,    'MPa'};     % Bulk modulus
+    nu    = {32,       'mm^2/s'};  % Kinematic viscosity
+    D_c   = {1e-9,     'm^2/s'};   % Tracer diffusivity
+  end
+end

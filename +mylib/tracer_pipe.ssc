@@ -1,0 +1,47 @@
+component tracer_pipe
+% Tracer Pipe
+% Pipe friction only (no internal volume): laminar Hagen-Poiseuille,
+% turbulent Haaland, smoothed (cubic) transition between Re_lam and Re_tur.
+% Connect Tracer Volume blocks between pipe segments to model pipe volume.
+  nodes
+    A = mylib.tracer_liquid; % A:left
+    B = mylib.tracer_liquid; % B:right
+  end
+  parameters
+    L            = {1,     'm'};    % Pipe length
+    D            = {0.01,  'm'};    % Hydraulic diameter
+    roughness    = {15e-6, 'm'};    % Internal surface absolute roughness
+    L_eq         = {0,     'm'};    % Aggregate equivalent length of local resistances
+    shape_factor = {64,    '1'};    % Laminar friction shape factor
+    Re_lam       = {2000,  '1'};    % Laminar flow upper Reynolds number limit
+    Re_tur       = {4000,  '1'};    % Turbulent flow lower Reynolds number limit
+    mdot_eps     = {1e-6,  'kg/s'}; % Upwind switching smoothing width
+  end
+  variables
+    mdot   = {0, 'kg/s'}; % Total mass flow A -> B
+    mdot_c = {0, 'kg/s'}; % Tracer mass flow A -> B
+  end
+  branches
+    mdot   : A.mdot   -> B.mdot;
+    mdot_c : A.mdot_c -> B.mdot_c;
+  end
+  intermediates
+    rho_A   = A.rho0 * exp((A.p - A.p_ref) / A.beta);
+    rho_B   = A.rho0 * exp((B.p - A.p_ref) / A.beta);
+    rho_avg = (rho_A + rho_B) / 2;
+    area    = pi * D^2 / 4;
+    Re      = abs(mdot) * D / (area * rho_avg * A.nu);
+    dp_lam  = shape_factor * A.nu * (L + L_eq) * mdot / (2 * D^2 * area);
+    f_tur   = 1 / (-1.8 * log10(6.9 / max(Re, Re_lam) + (roughness / D / 3.7)^1.11))^2;
+    dp_tur  = f_tur * (L + L_eq) * mdot * abs(mdot) / (2 * rho_avg * D * area^2);
+    z       = min(max((Re - Re_lam) / (Re_tur - Re_lam), 0), 1);
+    s       = 3 * z^2 - 2 * z^3;               % 0: laminar, 1: turbulent
+    w       = (1 + tanh(mdot / mdot_eps)) / 2; % 1: A is upwind, 0: B is upwind
+    c_up    = w * A.c + (1 - w) * B.c;
+    G_diff  = rho_avg * A.D_c * area / L;      % Diffusive conductance
+  end
+  equations
+    A.p - B.p == (1 - s) * dp_lam + s * dp_tur;
+    mdot_c    == mdot * c_up + G_diff * (A.c - B.c);
+  end
+end

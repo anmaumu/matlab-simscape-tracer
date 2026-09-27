@@ -1,0 +1,30 @@
+component tracer_volume
+% Tracer Volume
+% Constant volume with pressure-dependent density and perfect mixing of tracer.
+% Density: rho = rho0 * exp((p - p_ref) / beta), taken from the domain parameters.
+  nodes
+    A = mylib.tracer_liquid; % A:top
+  end
+  parameters
+    V = {1e-3, 'm^3'}; % Volume
+  end
+  variables
+    mdot   = {0, 'kg/s'}; % Mass flow into volume
+    mdot_c = {0, 'kg/s'}; % Tracer mass flow into volume
+    p = {value = {0.1, 'MPa'}, priority = priority.high}; % Initial pressure
+    c = {value = {0,   '1'},   priority = priority.high}; % Initial concentration
+  end
+  branches
+    mdot   : A.mdot   -> *;
+    mdot_c : A.mdot_c -> *;
+  end
+  intermediates
+    rho = A.rho0 * exp((p - A.p_ref) / A.beta);
+  end
+  equations
+    p == A.p;
+    c == A.c;
+    V * rho / A.beta * p.der == mdot;            % Total mass conservation, drho/dp = rho/beta
+    rho * V * c.der          == mdot_c - c * mdot; % Tracer mass conservation
+  end
+end

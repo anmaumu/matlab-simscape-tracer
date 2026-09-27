@@ -1,0 +1,15 @@
+component(Propagation = source) tracer_fluid_properties
+% Tracer Fluid Properties
+% Sets the fluid properties for the connected tracer liquid network.
+% Without this block, the default values in tracer_liquid.ssc are used.
+  parameters
+    rho0  = {850,      'kg/m^3'};  % Density at reference pressure
+    p_ref = {0.101325, 'MPa'};     % Reference pressure
+    beta  = {1.5e3,    'MPa'};     % Bulk modulus
+    nu    = {32,       'mm^2/s'};  % Kinematic viscosity
+    D_c   = {1e-9,     'm^2/s'};   % Tracer diffusivity
+  end
+  nodes
+    A = mylib.tracer_liquid(rho0 = rho0, p_ref = p_ref, beta = beta, nu = nu, D_c = D_c); % A:right
+  end
+end

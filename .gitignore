@@ -1,0 +1,12 @@
+# Local MCP configuration (machine-specific paths)
+.mcp.json
+
+# Generated figures
+*.png
+
+# MATLAB / Simscape build artifacts
+*.asv
+*.slxc
+slprj/
+*_lib.slx
++mylib/*.sscp

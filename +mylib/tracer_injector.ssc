@@ -1,0 +1,25 @@
+component tracer_injector
+% Tracer Injector
+% Mass flow source driven by a physical signal. Injected liquid has concentration c_in.
+  inputs
+    mdot_in = {0, 'kg/s'}; % M:left
+  end
+  nodes
+    A = mylib.tracer_liquid; % A:right
+  end
+  parameters
+    c_in = {1, '1'}; % Concentration of injected liquid
+  end
+  variables
+    mdot   = {0, 'kg/s'}; % Mass flow out of injector into node A
+    mdot_c = {0, 'kg/s'}; % Tracer mass flow into node A
+  end
+  branches
+    mdot   : * -> A.mdot;
+    mdot_c : * -> A.mdot_c;
+  end
+  equations
+    mdot   == mdot_in;
+    mdot_c == mdot_in * c_in;
+  end
+end

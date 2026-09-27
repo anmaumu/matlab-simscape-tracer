@@ -1,0 +1,46 @@
+component tracer_orifice
+% Tracer Orifice
+% Local Restriction (IL) equations: dp_cr from critical Reynolds number,
+% area ratio correction and optional pressure recovery.
+% Tracer is carried with the upwind concentration plus diffusion.
+  nodes
+    A = mylib.tracer_liquid; % A:left
+    B = mylib.tracer_liquid; % B:right
+  end
+  parameters
+    Cd                = {0.64, '1'};    % Discharge coefficient
+    S_R               = {1e-5, 'm^2'};  % Restriction area
+    S                 = {inf,  'm^2'};  % Cross-sectional area at ports
+    pressure_recovery = {0,    '1'};    % Pressure recovery (0: off, 1: on)
+    Re_cr             = {150,  '1'};    % Critical Reynolds number
+    mdot_eps          = {1e-6, 'kg/s'}; % Upwind switching smoothing width
+  end
+  variables
+    mdot   = {0, 'kg/s'}; % Total mass flow A -> B
+    mdot_c = {0, 'kg/s'}; % Tracer mass flow A -> B
+  end
+  branches
+    mdot   : A.mdot   -> B.mdot;
+    mdot_c : A.mdot_c -> B.mdot_c;
+  end
+  intermediates
+    rho_A   = A.rho0 * exp((A.p - A.p_ref) / A.beta);
+    rho_B   = A.rho0 * exp((B.p - A.p_ref) / A.beta);
+    rho_avg = (rho_A + rho_B) / 2;
+    dp      = A.p - B.p;
+    D_h     = sqrt(4 * S_R / pi);
+    dp_cr   = pi/4 * rho_avg / (2 * S_R) * (Re_cr * A.nu / Cd)^2;
+    ratio   = S_R / S;
+    root    = sqrt(1 - ratio^2 * (1 - Cd^2));
+    PR_rec  = (root - Cd * ratio) / (root + Cd * ratio);
+    PR_loss = pressure_recovery * PR_rec + (1 - pressure_recovery);
+    w       = (1 + tanh(mdot / mdot_eps)) / 2; % 1: A is upwind, 0: B is upwind
+    c_up    = w * A.c + (1 - w) * B.c;
+    G_diff  = rho_avg * A.D_c * S_R / D_h;     % Diffusive conductance
+  end
+  equations
+    assert(S_R < S, 'Restriction area must be smaller than port area');
+    mdot   == Cd * S_R * sqrt(2 * rho_avg / (PR_loss * (1 - ratio^2))) * dp / (dp^2 + dp_cr^2)^0.25;
+    mdot_c == mdot * c_up + G_diff * (A.c - B.c);
+  end
+end
